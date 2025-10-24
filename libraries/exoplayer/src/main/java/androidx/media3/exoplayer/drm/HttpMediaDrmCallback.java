@@ -19,6 +19,7 @@ import static androidx.media3.exoplayer.drm.DrmUtil.executePost;
 
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Base64;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
 import androidx.media3.common.util.Assertions;
@@ -153,10 +154,21 @@ public final class HttpMediaDrmCallback implements MediaDrmCallback {
     synchronized (keyRequestProperties) {
       requestProperties.putAll(keyRequestProperties);
     }
-    return executePost(
-        dataSourceFactory.createDataSource(),
-        url,
-        /* httpBody= */ request.getData(),
-        requestProperties);
+
+    // Sridhar - start
+    String base64Data = Base64.encodeToString(request.getData(), Base64.DEFAULT);
+    byte[] utf8Base64Data = Util.getUtf8Bytes(base64Data);
+
+    // 👇 FIX: create a DataSource from the factory
+    byte[] executeKeyResult = executePost(dataSourceFactory.createDataSource(), url, utf8Base64Data, requestProperties);
+
+    if (executeKeyResult != null) {
+        String base64Key = Util.fromUtf8Bytes(executeKeyResult);
+        executeKeyResult = Base64.decode(base64Key, Base64.DEFAULT);
+    }
+
+    System.out.println("Exoplayer: executeKeyResult completed");
+    return executeKeyResult;
+    // Sridhar - end
   }
 }
