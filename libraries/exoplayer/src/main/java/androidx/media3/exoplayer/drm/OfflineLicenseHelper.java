@@ -41,6 +41,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import androidx.media3.common.C;
+
 /** Helper class to download, renew and release offline licenses. */
 @UnstableApi
 public final class OfflineLicenseHelper {
@@ -154,6 +156,26 @@ public final class OfflineLicenseHelper {
         dataSourceFactory,
         optionalKeyRequestParameters,
         eventDispatcher);
+  }
+
+  //Sridhar added
+  public static OfflineLicenseHelper newWidevineInstance(
+      String defaultLicenseUrl,
+      boolean forceDefaultLicenseUrl,
+      DataSource.Factory dataSourceFactory,
+      @Nullable Map<String, String> optionalKeyRequestParameters,
+      FrameworkMediaDrm mediaDrm,
+      DrmSessionEventListener.EventDispatcher eventDispatcher) {
+
+    DefaultDrmSessionManager drmSessionManager =
+        new DefaultDrmSessionManager.Builder()
+            .setUuidAndExoMediaDrmProvider(C.WIDEVINE_UUID, uuid -> mediaDrm)
+            .setKeyRequestParameters(optionalKeyRequestParameters)
+            .build(
+                new HttpMediaDrmCallback(
+                    defaultLicenseUrl, forceDefaultLicenseUrl, dataSourceFactory));
+
+    return new OfflineLicenseHelper(drmSessionManager, eventDispatcher);
   }
 
   private static OfflineLicenseHelper newWidevineInstance(
